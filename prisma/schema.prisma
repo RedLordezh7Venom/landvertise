@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  LANDOWNER
+  ADVERTISER
+  ADMIN
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  PENDING
+  LEASED
+  INACTIVE
+}
+
+enum AdvertisementStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  RETRACTED
+}
+
+enum ContractStatus {
+  DRAFT
+  NEGOTIATING
+  SIGNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  userType      UserType
+  firstName     String
+  lastName      String
+  email         String        @unique
+  passwordHash  String
+  phoneNumber   String?
+  address       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  properties    LandProperty[]
+  advertisements Advertisement[]
+  bids          Bid[]
+  contracts     Contract[]
+}
+
+model LandProperty {
+  id                  String         @id @default(cuid())
+  userId              String
+  user                User           @relation(fields: [userId], references: [id])
+  latitude            Float
+  longitude           Float
+  sizeInSqm          Float
+  description        String?
+  askingPrice        Decimal
+  status             PropertyStatus
+  satelliteVisibility Boolean
+  imageUrl           String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  advertisements     Advertisement[]
+}
+
+model Advertisement {
+  id            String              @id @default(cuid())
+  advertiserId  String
+  advertiser    User                @relation(fields: [advertiserId], references: [id])
+  propertyId    String
+  property      LandProperty        @relation(fields: [propertyId], references: [id])
+  designUrl     String?
+  startDate     DateTime
+  endDate       DateTime
+  status        AdvertisementStatus
+  bidAmount     Decimal?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  bids          Bid[]
+  contract      Contract?
+}
+
+model Bid {
+  id              String    @id @default(cuid())
+  advertisementId String
+  advertisement   Advertisement @relation(fields: [advertisementId], references: [id])
+  advertiserId    String
+  advertiser      User      @relation(fields: [advertiserId], references: [id])
+  amount          Decimal
+  bidTime         DateTime  @default(now())
+  status          BidStatus
+}
+
+model Contract {
+  id                String        @id @default(cuid())
+  advertisementId   String        @unique
+  advertisement     Advertisement @relation(fields: [advertisementId], references: [id])
+  landownerId       String
+  landowner         User          @relation(fields: [landownerId], references: [id])
+  startDate         DateTime
+  endDate           DateTime
+  paymentAmount     Decimal
+  paymentSchedule   String
+  status            ContractStatus
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  contractDocumentUrl String?
+}
