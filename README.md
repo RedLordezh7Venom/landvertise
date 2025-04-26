@@ -1,1 +1,1 @@
- 
+vibe coding sucks 
